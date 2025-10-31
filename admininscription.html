@@ -1,0 +1,502 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>KCN — Admin Reçus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --brand:#0b63c7; --accent:#00bcd4; --ink:#0f172a; --muted:#475569; --page:#f4f7fb;
+      --line:#e6eef6; --card:#ffffff; --ok:#16a34a; --wait:#b45309; --danger:#b91c1c;
+      --grad: linear-gradient(135deg, #0b63c7 0%, #00bcd4 100%);
+      --soft: 0 18px 48px rgba(2,6,23,.10);
+      --rad: 16px;
+    }
+    /* Base & typo fluide */
+    *,*::before,*::after{box-sizing:border-box}
+    html{font-size:16px}
+    body{margin:0;font-family:'Montserrat',sans-serif;background:var(--page);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    h1{font-size:clamp(1.1rem,1rem + 1.2vw,1.6rem);line-height:1.2}
+    .mini{font-size:clamp(.9rem,.85rem + .2vw,.95rem);color:var(--muted)}
+
+    /* Layout */
+    .wrap{max-width:1200px;margin:32px auto;padding:0 16px}
+    .hero{background:var(--grad);color:#fff;border-radius:20px;box-shadow:var(--soft);padding:18px 20px;margin-bottom:18px;
+          display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);box-shadow:var(--soft);padding:16px}
+    .row{display:grid;gap:10px;grid-template-columns:1fr}
+    @media(min-width:720px){.row.two{grid-template-columns:2fr 1fr}}
+
+    /* Form & buttons */
+    input,button{font-family:inherit}
+    input[type="password"],input[type="search"]{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+    input[type="search"]{min-width:260px}
+    .btn{background:linear-gradient(90deg,#ff9800,#ffc107);color:#111;border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;box-shadow:0 10px 26px rgba(255,152,0,.2);transition:transform .06s}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.ghost{background:#fff;color:var(--brand);border:2px solid var(--brand);box-shadow:none}
+    .btn.danger{background:#fff;color:var(--danger);border:2px solid var(--danger)}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn:focus-visible, input:focus-visible{outline:3px solid #111;outline-offset:2px}
+
+    /* Table responsive */
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+    table{width:100%;border-collapse:collapse;min-width:720px;background:#fff}
+    th,td{border-bottom:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}
+    thead th{position:sticky;top:0;background:#f8fbff;color:#0b4573;z-index:1}
+    .bar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-weight:800;border:1px solid var(--line);background:#fff}
+    .ok{color:var(--ok);border-color:#86efac;background:#f0fdf4}
+    .wait{color:var(--wait);border-color:#fde68a;background:#fffbeb}
+
+    /* Modal accessible */
+    .backdrop{position:fixed;inset:0;background:rgba(2,6,23,.55);backdrop-filter:blur(2px);z-index:60;opacity:0;pointer-events:none;transition:opacity .18s}
+    .modal{position:fixed;inset:0;display:grid;place-items:center;z-index:61;opacity:0;pointer-events:none;transition:opacity .18s}
+    .show{opacity:1;pointer-events:auto}
+    .mcard{width:min(94%,860px);max-height:min(90vh,90dvh);overflow:auto;background:#fff;border:1px solid var(--line);
+      border-radius:18px;box-shadow:var(--soft);padding:16px;position:relative}
+    .mhead{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:8px;position:sticky;top:0;background:#fff;padding-top:4px;z-index:2}
+    .close{position:absolute;right:10px;top:10px;border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1}
+    .meta{display:flex;flex-wrap:wrap;gap:12px;color:#334155;font-size:.95rem;margin-bottom:10px}
+    .mtbl{width:100%;border-collapse:collapse;margin:8px 0}
+    .mtbl th,.mtbl td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left}
+    .tot{display:flex;justify-content:flex-end;margin-top:10px}
+    .tot table{min-width:260px}
+    .mbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
+    .proof{border:1px dashed var(--line);border-radius:12px;padding:10px;margin-top:12px;background:#f8fafc}
+    .proof .thumb{display:block;max-width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+    .wm{ position:absolute; inset:0; display:none; place-items:center; pointer-events:none; z-index:0; }
+    .wm span{ font-size:90px; font-weight:900; letter-spacing:4px; color:#0f172a; opacity:.08; transform:rotate(-20deg); text-transform:uppercase; user-select:none; }
+
+    @media (max-width:520px){
+      .btn{padding:9px 12px}
+      .hero{padding:14px 16px}
+      .mbar{justify-content:stretch}
+      .mbar .btn{flex:1 1 auto;text-align:center}
+    }
+    @media (prefers-reduced-motion: reduce){
+      *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero" role="banner">
+      <h1>Admin — Reçus d’inscription KCN</h1>
+      <div class="mini" aria-hidden="true">Sécurité • Qualité • Inclusion</div>
+    </div>
+
+    <!-- Connexion -->
+    <div class="card" id="loginBox">
+      <div class="row two">
+        <div>
+          <label for="adminCode" class="mini">Code Admin</label>
+          <input id="adminCode" type="password" placeholder="Entrer le code Admin" autocomplete="current-password" />
+          <p class="mini" style="margin-top:6px">Code par défaut : <b>KCN-ADMIN-2025</b></p>
+        </div>
+        <div style="align-self:end">
+          <button class="btn" id="adminLogin" type="button">Se connecter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tableau -->
+    <div class="card" id="tableBox" style="display:none">
+      <div class="bar" role="toolbar" aria-label="Actions reçus">
+        <input id="q" type="search" placeholder="Rechercher (nom, email, méthode…)" aria-label="Rechercher dans les reçus">
+        <button class="btn" id="refresh" type="button">Rafraîchir</button>
+        <button class="btn ghost" id="exportCsv" type="button">Exporter CSV</button>
+        <button class="btn ghost" id="logout" type="button" style="margin-left:auto">Se déconnecter</button>
+      </div>
+      <div class="table-wrap" role="region" aria-label="Liste des reçus" tabindex="0">
+        <table aria-describedby="empty">
+          <caption class="visually-hidden" style="position:absolute;left:-9999px">Reçus d’inscription</caption>
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Nom</th>
+              <th scope="col">Méthode</th>
+              <th scope="col">Devise</th>
+              <th scope="col">Total</th>
+              <th scope="col">Statut</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p id="empty" class="mini" style="margin-top:10px;display:none">
+        Aucun reçu pour le moment. (Vérifie que le formulaire et l’admin sont ouverts depuis le <b>même domaine</b>.)
+      </p>
+    </div>
+  </div>
+
+  <!-- Modal aperçu reçu -->
+  <div class="backdrop" id="bd" aria-hidden="true"></div>
+  <div class="modal" id="md" role="dialog" aria-modal="true" aria-label="Aperçu reçu">
+    <div class="mcard" id="card">
+      <div class="mhead">
+        <h3 style="margin:0;color:#0b4573">Reçu KCN</h3>
+        <button class="close" id="mdX" type="button" aria-label="Fermer">×</button>
+        <span class="pill" id="chip" aria-live="polite"></span>
+      </div>
+
+      <div id="wm" class="wm" aria-hidden="true"><span>EN ATTENTE</span></div>
+
+      <div class="meta" id="meta"></div>
+
+      <table class="mtbl">
+        <thead><tr><th>Description</th><th>Qté</th><th style="text-align:right">Montant</th></tr></thead>
+        <tbody id="lines"></tbody>
+      </table>
+
+      <div class="tot">
+        <table aria-label="Total du reçu">
+          <tr><td>Sous-total</td><td style="text-align:right" id="sub">—</td></tr>
+          <tr><td>Frais paiement</td><td style="text-align:right" id="fee">—</td></tr>
+          <tr><th>Total</th><th style="text-align:right" id="tot">—</th></tr>
+        </table>
+      </div>
+
+      <div id="proof" class="proof" style="display:none">
+        <strong>Preuve fournie</strong>
+        <div id="proofTxt" class="mini" style="margin-top:6px"></div>
+        <div id="proofView" style="margin-top:10px"></div>
+      </div>
+
+      <div class="mbar">
+        <button class="btn" id="btnPrint" type="button">Télécharger / Imprimer</button>
+        <button class="btn ghost" id="btnPaid" type="button">Marquer PAYÉ</button>
+        <button class="btn danger" id="btnDel" type="button">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'kcn_receipts'; // même clé que le formulaire
+    const ADMIN_CODE_SHA256 = "1c946953a5218ef87c7f2468b1b9be359f0aec8def112420d8dc84e1112f2f89"; // "KCN-ADMIN-2025"
+    const $ = s => document.querySelector(s);
+    const nf = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2});
+    function money(val, cur){ return (cur==='USD'?'$ ':'') + nf.format(val) + (cur==='HTG'?' HTG':''); }
+    async function sha256Hex(text){ const enc=new TextEncoder().encode(text); const buf=await crypto.subtle.digest('SHA-256',enc); return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
+    function load(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); }catch{ return []; } }
+    function save(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+    function toDispHTG(vHTG, currency, rate){ if(currency==='USD'){ const r=Number(rate)||0; return r>0 ? (vHTG/r) : NaN; } return vHTG; }
+    function pick(a,b){ return (a==null ? b : a); }
+
+    function sortByDateDesc(list){ return list.slice().sort((a,b)=> dateKey(b) - dateKey(a)); }
+    function dateKey(r){
+      const d = new Date(r.date||'');
+      if(!isNaN(d)) return d.getTime();
+      const m = String(r.id||'').match(/\d{10,13}/);
+      return m ? Number(m[0]) : 0;
+    }
+
+    const loginBox = $('#loginBox');
+    const tableBox = $('#tableBox');
+    const rows = $('#rows');
+    const empty = $('#empty');
+    const q = $('#q');
+
+    function render(){
+      try{
+        const all = sortByDateDesc(load());
+        const term = (q.value||'').toLowerCase().trim();
+        rows.innerHTML='';
+
+        const list = all.filter(r=>{
+          if(!term) return true;
+          const hay = [
+            r.no||'', r.name||'', r.email||'', r.method||'',
+            r.status||'', r.currency||'', r.id||''
+          ].join(' ').toLowerCase();
+          return hay.includes(term);
+        });
+
+        if(!list.length){ empty.style.display='block'; return; }
+        empty.style.display='none';
+
+        list.forEach(r=>{
+          const currency = r.currency || 'HTG';
+          const rate = Number(r.rate)||0;
+          const totHTG = pick(r.tot, r.totHTG)||0;
+          const dispTot = toDispHTG(totHTG, currency, rate);
+          const tr=document.createElement('tr');
+          tr.innerHTML=`
+            <td><div>${r.date||''}</div><div class="mini">${r.no||r.id||''}</div></td>
+            <td>${r.name||'—'}<div class="mini">${r.email||''}</div></td>
+            <td>${(r.method||'-').toUpperCase()} ${(r.proof && ['moncash','natcash','bank'].includes((r.method||'').toLowerCase()))? '<span class="mini">• preuve</span>':''}</td>
+            <td>${currency} ${(currency==='USD' && rate<=0)? '<span class="mini" style="color:#b91c1c">(taux?)</span>':''}</td>
+            <td>${isFinite(dispTot)? money(dispTot, currency): '<span class="mini" style="color:#b91c1c">—</span>'}</td>
+            <td>${(r.status||'EN ATTENTE').toUpperCase()==='PAYÉ'
+                  ?'<span class="pill ok">PAYÉ</span>'
+                  :'<span class="pill wait">'+(r.status||'EN ATTENTE')+'</span>'}</td>
+            <td>
+              <button class="btn" data-act="view" data-id="${r.id}" type="button" aria-label="Voir le reçu">Aperçu</button>
+              <button class="btn" data-act="print" data-id="${r.id}" type="button" aria-label="Télécharger le reçu">Télécharger</button>
+              ${(String(r.status||'').toUpperCase()==='PAYÉ') ? '' : '<button class="btn ghost" data-act="paid" data-id="'+r.id+'" type="button" aria-label="Marquer payé">Marquer PAYÉ</button>'}
+              <button class="btn danger" data-act="del" data-id="${r.id}" type="button" aria-label="Supprimer le reçu">Supprimer</button>
+            </td>`;
+          rows.appendChild(tr);
+        });
+      }catch(err){
+        console.error('render error:', err);
+        alert("Erreur d’affichage. Vérifie les données enregistrées.");
+      }
+    }
+
+    const bd = $('#bd'), md = $('#md');
+    const chip = $('#chip'), meta = $('#meta'), lines = $('#lines');
+    const sub = $('#sub'), fee = $('#fee'), tot = $('#tot'), wm = $('#wm');
+    const proofWrap = $('#proof'), proofTxt = $('#proofTxt'), proofView = $('#proofView');
+
+    let lastFocused = null;
+
+    function openPreview(rec){
+      lastFocused = document.activeElement;
+      fillPreview(rec);
+      bd.classList.add('show'); md.classList.add('show');
+      bd.setAttribute('aria-hidden','false');
+      $('#btnPrint').onclick = ()=> printReceipt(rec);
+      $('#btnPaid').onclick = ()=> markPaid(rec.id, true);
+      $('#btnDel').onclick = ()=> delReceipt(rec.id, true);
+      // focus sur le bouton fermer
+      $('#mdX').focus();
+      // fermer avec Echap
+      window.addEventListener('keydown', escClose, { once:true });
+    }
+    function escClose(e){ if(e.key==='Escape') closePreview(); }
+    function closePreview(){
+      bd.classList.remove('show'); md.classList.remove('show');
+      bd.setAttribute('aria-hidden','true');
+      if(lastFocused && typeof lastFocused.focus==='function') lastFocused.focus();
+    }
+    $('#mdX').addEventListener('click', closePreview);
+    bd.addEventListener('click', (e)=>{ if(e.target===bd) closePreview(); });
+
+    function fillPreview(r){
+      const currency = r.currency || 'HTG';
+      const rate = Number(r.rate)||0;
+      const toDisp = (v)=> toDispHTG(v, currency, rate);
+
+      chip.textContent = r.status||'EN ATTENTE';
+      chip.className = 'pill ' + (String(r.status||'').toUpperCase()==='PAYÉ' ? 'ok':'wait');
+
+      meta.innerHTML = `
+        <div><strong>N°:</strong> ${r.no||r.id||''}</div>
+        <div><strong>Date:</strong> ${r.date||new Date().toLocaleString('fr-FR')}</div>
+        <div><strong>Nom:</strong> ${r.name||'—'}</div>
+        <div><strong>Email:</strong> ${r.email||'—'}</div>
+        <div><strong>Méthode:</strong> ${(r.method||'-').toUpperCase()}</div>
+        <div><strong>Devise:</strong> ${currency}${currency==='USD' ? ' (taux '+(rate||'—')+')':''}</div>
+      `;
+
+      const rowsLegacy = (r.rows||[]).map(x=>({label:x.label, qty:x.qty||1, amt:x.amt||0}));
+      const rowsNew = (r.items||[]).map(x=>({label:x.label, qty:x.qty||1, amt:x.amt||0}));
+      const L = rowsLegacy.length ? rowsLegacy : rowsNew;
+
+      lines.innerHTML='';
+      L.forEach(x=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td>${x.label||''}</td><td>${x.qty||1}</td><td style="text-align:right">${money(toDisp(x.amt||0), currency)}</td>`;
+        lines.appendChild(tr);
+      });
+
+      const subHTG = pick(r.sub, r.subHTG)||0;
+      const feeHTG = pick(r.fee, r.feeHTG)||0;
+      const totHTG = pick(r.tot, r.totHTG)||0;
+
+      sub.textContent = money(toDisp(subHTG), currency);
+      fee.textContent = money(toDisp(feeHTG), currency);
+      tot.textContent = money(toDisp(totHTG), currency);
+
+      const paid = (String(r.status||'').toUpperCase()==='PAYÉ');
+      wm.style.display = paid ? 'none' : 'grid';
+      wm.querySelector('span').textContent = (r.status||'EN ATTENTE').toUpperCase();
+
+      if(r.proof){
+        proofWrap.style.display='block';
+        proofTxt.innerHTML = `
+          Réf: <strong>${r.proof.ref||'—'}</strong><br>
+          Tel/Compte: <strong>${r.proof.phone||'—'}</strong><br>
+          Date/heure: <strong>${r.proof.when||'—'}</strong><br>
+          Fichier: <strong>${r.proof.file||r.proof.fileName||'—'}</strong>
+        `;
+        proofView.innerHTML='';
+        const data = r.proof.fileData || r.proof.dataUrl;
+        if(data && typeof data==='string'){
+          if(data.startsWith('data:image/')){
+            const img = new Image();
+            img.src = data; img.alt = 'Preuve de paiement'; img.loading = 'lazy';
+            img.className = 'thumb';
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', ()=>{ const w = window.open('about:blank'); w.document.write('<img src="'+data+'" style="max-width:100%;height:auto;display:block">'); });
+            proofView.appendChild(img);
+          }else if(data.startsWith('data:application/pdf')){
+            const a = document.createElement('a');
+            a.href = data; a.target = "_blank"; a.rel="noopener";
+            a.textContent = 'Ouvrir le PDF de la preuve';
+            proofView.appendChild(a);
+          }
+        }
+      }else{
+        proofWrap.style.display='none';
+        proofTxt.innerHTML=''; proofView.innerHTML='';
+      }
+    }
+
+    function printReceipt(r){
+      let currency = r.currency || 'HTG';
+      let rate = Number(r.rate)||0;
+      if(currency==='USD' && rate<=0){
+        const x = prompt("Taux USD↔HTG manquant. Entrez un taux pour afficher le reçu :", "130");
+        const rr = parseFloat((x||'').replace(',','.'));
+        if(!(rr>0)) return alert('Taux invalide.');
+        rate = rr;
+      }
+      const toDisp = (v)=> toDispHTG(v, currency, rate);
+
+      const rowsLegacy = (r.rows||[]).map(x=>({label:x.label, qty:x.qty||1, amt:x.amt||0}));
+      const rowsNew = (r.items||[]).map(x=>({label:x.label, qty:x.qty||1, amt:x.amt||0}));
+      const L = rowsLegacy.length ? rowsLegacy : rowsNew;
+
+      const subHTG = pick(r.sub, r.subHTG)||0;
+      const feeHTG = pick(r.fee, r.feeHTG)||0;
+      const totHTG = pick(r.tot, r.totHTG)||0;
+      const status = (r.status||'EN ATTENTE').toUpperCase();
+      const lines = L.map(x=>`<tr><td>${x.label||''}</td><td>${x.qty||1}</td><td style="text-align:right">${money(toDisp(x.amt||0), currency)}</td></tr>`).join('');
+
+      const html = `
+        <div style="font-family:Montserrat,Arial,sans-serif;color:#0f172a;position:relative">
+          ${status==='PAYÉ' ? '' : '<div style="position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;"><span style="font-size:90px;font-weight:900;letter-spacing:4px;color:#0f172a;opacity:.08;transform:rotate(-20deg);text-transform:uppercase;">'+status+'</span></div>'}
+          <h2 style="margin:0 0 8px 0;color:#0b4573">Reçu KCN — ${r.no||r.id||''} <span style="display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid #e6eef6;background:#f8fafc;font-weight:700;color:#0b4573">${status}</span></h2>
+          <div style="margin:8px 0 12px 0;color:#475569">
+            <div><b>Date:</b> ${r.date||new Date().toLocaleString('fr-FR')}</div>
+            <div><b>Nom:</b> ${r.name||'—'}</div>
+            <div><b>Email:</b> ${r.email||'—'}</div>
+            <div><b>Méthode:</b> ${(r.method||'').toUpperCase()}</div>
+            <div><b>Devise:</b> ${currency}${currency==='USD' ? ' (taux '+(rate||'—')+')':''}</div>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr><th style="text-align:left;border-bottom:1px solid #e6eef6;padding:8px">Description</th><th style="text-align:left;border-bottom:1px solid #e6eef6;padding:8px">Qté</th><th style="text-align:right;border-bottom:1px solid #e6eef6;padding:8px">Montant</th></tr></thead>
+            <tbody>${lines}</tbody>
+          </table>
+          <div style="display:flex;justify-content:flex-end;margin-top:10px">
+            <table>
+              <tr><td style="padding:4px 8px">Sous-total</td><td style="padding:4px 8px;text-align:right">${money(toDisp(subHTG), currency)}</td></tr>
+              <tr><td style="padding:4px 8px">Frais paiement</td><td style="padding:4px 8px;text-align:right">${money(toDisp(feeHTG), currency)}</td></tr>
+              <tr><th style="padding:6px 8px">Total</th><th style="padding:6px 8px;text-align:right">${money(toDisp(totHTG), currency)}</th></tr>
+            </table>
+          </div>
+          ${(r.proof && (r.proof.ref||r.proof.phone||r.proof.when||r.proof.file||r.proof.fileName))? `<p style="margin-top:10px"><strong>Preuve :</strong><br>
+            Réf: <strong>${r.proof.ref||'—'}</strong> — Tel/Compte: <strong>${r.proof.phone||'—'}</strong><br>
+            Date/heure: <strong>${r.proof.when||'—'}</strong> — Fichier: <strong>${r.proof.file||r.proof.fileName||'—'}</strong>
+          </p>`:''}
+          <p style="margin-top:14px;font-size:.95rem">Merci pour votre confiance !<br><strong>Therese Redgie Marc</strong> — Secrétaire administrative - KCN</p>
+        </div>`;
+
+      const w=window.open('','PRINT','height=900,width=900');
+      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${r.no||'Reçu KCN'}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"></head><body>${html}</body></html>`);
+      w.document.close(); w.focus(); w.print(); w.close();
+    }
+
+    rows.addEventListener('click',(e)=>{
+      const btn = e.target.closest('button[data-act]');
+      if(!btn) return;
+      const id = btn.getAttribute('data-id');
+      const act = btn.getAttribute('data-act');
+      const all = load();
+      const i = all.findIndex(x=>x.id===id);
+      if(i<0) return;
+
+      if(act==='view') openPreview(all[i]);
+      if(act==='print') printReceipt(all[i]);
+      if(act==='del') delReceipt(id);
+      if(act==='paid') markPaid(id);
+    });
+
+    function delReceipt(id, keepOpen=false){
+      if(!confirm('Supprimer ce reçu ?')) return;
+      const list = load().filter(x=>x.id!==id);
+      save(list);
+      if(!keepOpen) render(); else { render(); closePreview(); }
+    }
+
+    function markPaid(id, keepOpen=false){
+      askPin().then(ok=>{
+        if(!ok) return;
+        const list = load();
+        const i = list.findIndex(x=>x.id===id);
+        if(i<0) return;
+        list[i].status = 'PAYÉ';
+        save(list);
+        alert('Reçu marqué PAYÉ.');
+        if(!keepOpen) render(); else { render(); openPreview(list[i]); }
+      });
+    }
+
+    document.getElementById('refresh').addEventListener('click', render);
+    document.getElementById('exportCsv').addEventListener('click', exportCSV);
+    q.addEventListener('input', render);
+
+    // Login : bouton + touche Entrée
+    const adminCodeInput = document.getElementById('adminCode');
+    document.getElementById('adminLogin').addEventListener('click', login);
+    adminCodeInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') login(); });
+
+    document.getElementById('logout').addEventListener('click', ()=>{
+      tableBox.style.display='none';
+      loginBox.style.display='block';
+      adminCodeInput.value='';
+      adminCodeInput.focus();
+    });
+
+    async function login(){
+      const code = (adminCodeInput.value||'').trim();
+      if(!code) return alert('Entrer le code.');
+      const h = await sha256Hex(code);
+      if(h===ADMIN_CODE_SHA256){
+        loginBox.style.display='none';
+        tableBox.style.display='block';
+        render();
+        q.focus();
+      }else{
+        alert('Code invalide.');
+      }
+    }
+    async function askPin(){
+      const code = prompt("Code admin pour valider PAYÉ :");
+      if(code==null) return false;
+      try{ const h = await sha256Hex(code.trim()); return h===ADMIN_CODE_SHA256; }catch{ return false; }
+    }
+
+    window.addEventListener('storage', (e)=>{ if(e.key===STORAGE_KEY) render(); });
+
+    function exportCSV(){
+      const data = load();
+      if(!data.length) return alert('Rien à exporter.');
+      const headers = ['id','no','date','name','email','method','currency','rate','status','subHTG','feeHTG','totHTG'];
+      const lines = [headers.join(',')];
+      data.forEach(r=>{
+        const row = [
+          r.id||'', r.no||'', r.date||'', r.name||'', r.email||'',
+          r.method||'', r.currency||'HTG', r.rate||'', r.status||'',
+          pick(r.sub, r.subHTG)||0, pick(r.fee, r.feeHTG)||0, pick(r.tot, r.totHTG)||0
+        ].map(v=>{
+          const s = String(v??'');
+          return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+        });
+        lines.push(row.join(','));
+      });
+      const blob = new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'kcn_receipts_export.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+  </script>
+</body>
+</html>
